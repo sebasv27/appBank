@@ -1,0 +1,145 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  password       String
+  monthlyIncome  Float     @default(3000000)
+  currency       String    @default("COP")
+  avatarUrl      String?
+  pushToken      String?   // Firebase FCM token
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  transactions   Transaction[]
+  budgets        Budget[]
+  goals          Goal[]
+  alerts         Alert[]
+  categories     Category[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  icon      String    @default("circle")
+  color     String    @default("#0F6E56")
+  isDefault Boolean   @default(false)
+  userId    String?
+  createdAt DateTime  @default(now())
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgets      Budget[]
+
+  @@map("categories")
+}
+
+model Transaction {
+  id          String            @id @default(cuid())
+  amount      Float
+  description String
+  type        TransactionType   @default(EXPENSE)
+  source      TransactionSource @default(MANUAL)
+  date        DateTime          @default(now())
+  notes       String?
+  receiptUrl  String?
+  rawNotif    String?           // texto crudo de notificación bancaria
+  userId      String
+  categoryId  String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  @@map("transactions")
+}
+
+model Budget {
+  id         String   @id @default(cuid())
+  amount     Float
+  spent      Float    @default(0)
+  month      Int      // 1-12
+  year       Int
+  alertAt    Float    @default(0.8)  // alerta al 80%
+  userId     String
+  categoryId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+
+  @@unique([userId, categoryId, month, year])
+  @@map("budgets")
+}
+
+model Goal {
+  id          String     @id @default(cuid())
+  name        String
+  targetAmount Float
+  savedAmount  Float     @default(0)
+  deadline    DateTime?
+  icon        String     @default("target")
+  color       String     @default("#185FA5")
+  status      GoalStatus @default(ACTIVE)
+  userId      String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("goals")
+}
+
+model Alert {
+  id        String      @id @default(cuid())
+  type      AlertType
+  message   String
+  isRead    Boolean     @default(false)
+  metadata  Json?
+  userId    String
+  createdAt DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("alerts")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum TransactionSource {
+  MANUAL
+  NOTIFICATION
+  RECEIPT_OCR
+  IMPORT
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+}
+
+enum AlertType {
+  BUDGET_WARNING    // 80% del presupuesto
+  BUDGET_EXCEEDED   // 100%+
+  GOAL_REACHED
+  WEEKLY_SUMMARY
+  UNUSUAL_EXPENSE
+}

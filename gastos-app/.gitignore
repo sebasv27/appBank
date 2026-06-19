@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+logs/
+.DS_Store
+backend/logs/
+backend/prisma/dev.db
+firebase-service-account.json
