@@ -1,6 +1,5 @@
 // src/services/api.ts
 import axios from 'axios';
-
 // @ts-ignore
 const API_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:4000/api';
 
