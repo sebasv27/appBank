@@ -1,7 +1,7 @@
 // src/services/api.ts
 import axios from 'axios';
 // @ts-ignore
-const API_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:4000/api';
+const API_URL = ((import.meta as any).env?.VITE_API_URL as string) || 'https://appbank-sznb.onrender.com/api';
 
 export const api = axios.create({
   baseURL: API_URL,
