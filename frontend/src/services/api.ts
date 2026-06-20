@@ -9,22 +9,34 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' }
 })
 
-api.interceptors.request.use(cfg => {
-  const token = localStorage.getItem('token')
-  if (token) cfg.headers.Authorization = `Bearer ${token}`
-  return cfg
-})
-
-api.interceptors.response.use(
-  res => res,
-  err => {
-    if (err.response?.status === 401) {
-      localStorage.removeItem('token')
-      window.location.href = '/login'
-    }
-    return Promise.reject(err)
+// Interceptor de Solicitudes (Request): Solo añade el token si la petición va al Backend
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  
+  // Condición de seguridad: Solo inyecta el token si la URL pertenece a la API externa
+  if (token && config.url?.startsWith('http')) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-)
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
+// Interceptor de Respuestas (Response): Evita limpiar la sesión por culpa de archivos públicos
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Si el error es 401 pero NO viene de la URL del backend, lo ignoramos para no romper la PWA
+    if (error.response?.status === 401 && error.config.url?.includes(API_URL)) {
+      localStorage.removeItem('token');
+      // Solo redirige si no estás ya en la pantalla de login/registro
+      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const authApi = {
   register: (data: { name: string; email: string; password: string; monthlyIncome?: number }) =>
