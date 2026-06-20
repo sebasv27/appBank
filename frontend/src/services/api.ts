@@ -1,13 +1,17 @@
 // src/services/api.ts
 import axios from 'axios';
-// @ts-ignore
-const API_URL = ((import.meta as any).env?.VITE_API_URL as string) || 'https://appbank-sznb.onrender.com/api';
+
+// Forzamos la URL de producción directamente para evitar fallos de lectura de Vite en el build
+const API_URL = 'https://appbank-sznb.onrender.com/api';
 
 export const api = axios.create({
   baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-// Interceptor de Solicitudes (Request)
+// Interceptor para inyectar el Token en cada petición automáticamente
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
