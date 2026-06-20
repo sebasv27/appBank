@@ -8,15 +8,18 @@ export const api = axios.create({
 });
 
 // Interceptor de Solicitudes (Request)
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token && config.url?.startsWith('http')) {
-    config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-}, (error) => {
-  return Promise.reject(error);
-});
+);
 
 // Interceptor de Respuestas (Response)
 api.interceptors.response.use(
