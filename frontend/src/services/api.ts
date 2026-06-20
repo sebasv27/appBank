@@ -1,19 +1,16 @@
 // src/services/api.ts
-import axios from 'axios'
+import axios from 'axios';
 
-// 1. Validamos si existe la variable de entorno en producción, de lo contrario usamos el fallback local
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+// @ts-ignore
+const API_URL = (import.meta.env.VITE_API_URL as string) || 'http://localhost:4000/api';
 
-const api = axios.create({
-  baseURL: '/api',
-  headers: { 'Content-Type': 'application/json' }
-})
+export const api = axios.create({
+  baseURL: API_URL,
+});
 
-// Interceptor de Solicitudes (Request): Solo añade el token si la petición va al Backend
+// Interceptor de Solicitudes (Request)
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  
-  // Condición de seguridad: Solo inyecta el token si la URL pertenece a la API externa
   if (token && config.url?.startsWith('http')) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -22,14 +19,12 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
-// Interceptor de Respuestas (Response): Evita limpiar la sesión por culpa de archivos públicos
+// Interceptor de Respuestas (Response)
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Si el error es 401 pero NO viene de la URL del backend, lo ignoramos para no romper la PWA
     if (error.response?.status === 401 && error.config.url?.includes(API_URL)) {
       localStorage.removeItem('token');
-      // Solo redirige si no estás ya en la pantalla de login/registro
       if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
         window.location.href = '/login';
       }
