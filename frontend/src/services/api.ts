@@ -1,6 +1,9 @@
 // src/services/api.ts
 import axios from 'axios'
 
+// 1. Validamos si existe la variable de entorno en producción, de lo contrario usamos el fallback local
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api'
+
 const api = axios.create({
   baseURL: '/api',
   headers: { 'Content-Type': 'application/json' }
